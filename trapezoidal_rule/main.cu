@@ -12,18 +12,16 @@
 void run_integration(int method, float a, float b, int n, int block_size) {
     float *trap_p;
     cudaMallocManaged(&trap_p, sizeof(float));
-    
-    float h = (b - a) / n;
+   
+    float h        = (b - a) / n;
     int num_blocks = (n + block_size - 1) / block_size;
-    
-    *trap_p = 0.5f * (f(a) + f(b));
+    *trap_p        = 0.5f * (f(a) + f(b));
 
     std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
-    
     GET_TIME(start);
-    
+
     size_t shared_mem_size = block_size * sizeof(float);
-    
+
     if (method == 1) {
         trap_shared_tree<<<num_blocks, block_size, shared_mem_size>>>(a, h, n, trap_p);
     } else if (method == 2) {
@@ -32,17 +30,15 @@ void run_integration(int method, float a, float b, int n, int block_size) {
         size_t warp_shared_size = (block_size / 32) * sizeof(float);
         trap_warp_shuffle_k<<<num_blocks, block_size, warp_shared_size>>>(a, h, n, trap_p);
     }
-    
+
     cudaDeviceSynchronize();
-    
+
     GET_TIME(end);
     std::chrono::duration<double> diff = end - start;
-    double time = diff.count();
-    
-    *trap_p = (*trap_p) * h;
-    
-    printf("Metodo %d | Risultato: %.3f | Tempo: %f sec\n", method, *trap_p, time);
-    
+    double time                        = diff.count();
+    *trap_p                            = (*trap_p) * h;
+
+    printf("Metodo %d | Risultato: %.3f | Tempo: %f sec\n", method, *trap_p, time);    
     cudaFree(trap_p);
 }
 
