@@ -2,16 +2,14 @@
 
 __host__ __device__ float f(float x) { return x * x; }
 
-// =====================================================================
-// KERNEL 1: Shared Memory (Tree-structured sum)
-// =====================================================================
+// 1: Shared Memory (Tree-structured sum)
 __global__ void trap_shared_tree(float a, float h, int n, float* total_sum) {
     extern __shared__ float sdata[];
 
-    int tid = threadIdx.x;
+    int tid       = threadIdx.x;
     int global_id = blockIdx.x * blockDim.x + threadIdx.x;
+    float my_val  = 0.0f;
 
-    float my_val = 0.0f;
     if (global_id > 0 && global_id < n) {
         my_val = f(a + global_id * h);
     }
@@ -31,16 +29,14 @@ __global__ void trap_shared_tree(float a, float h, int n, float* total_sum) {
     }
 }
 
-// =====================================================================
-// KERNEL 2: Shared Memory (Dissemination sum)
-// =====================================================================
+// 2: Shared Memory (Dissemination sum)
 __global__ void trap_shared_dissemination(float a, float h, int n, float* total_sum) {
     extern __shared__ float sdata[];
 
-    int tid = threadIdx.x;
+    int tid       = threadIdx.x;
     int global_id = blockIdx.x * blockDim.x + threadIdx.x;
+    float my_val  = 0.0f;
 
-    float my_val = 0.0f;
     if (global_id > 0 && global_id < n) {
         my_val = f(a + global_id * h);
     }
@@ -61,19 +57,17 @@ __global__ void trap_shared_dissemination(float a, float h, int n, float* total_
     }
 }
 
-// =====================================================================
-// KERNEL 3: Warp Shuffle (Per blocchi con k * warpSize thread)
-// =====================================================================
+// 3: Warp Shuffle (Per blocchi con k * warpSize thread)
 __global__ void trap_warp_shuffle_k(float a, float h, int n, float* total_sum) {
     extern __shared__ float warp_sums[]; 
 
-    int tid = threadIdx.x;
+    int tid       = threadIdx.x;
     int global_id = blockIdx.x * blockDim.x + threadIdx.x;
+    float my_val  = 0.0f;
 
-    int lane_id = tid % warpSize; 
-    int warp_id = tid / warpSize; 
+    int lane_id = tid % warpSize;
+    int warp_id = tid / warpSize;
 
-    float my_val = 0.0f;
     if (global_id > 0 && global_id < n) {
         my_val = f(a + global_id * h);
     }
@@ -91,7 +85,7 @@ __global__ void trap_warp_shuffle_k(float a, float h, int n, float* total_sum) {
 
     // FASE 3
     if (warp_id == 0) {
-        int num_warps = blockDim.x / warpSize;
+        int num_warps   = blockDim.x / warpSize;
         float block_val = (lane_id < num_warps) ? warp_sums[lane_id] : 0.0f;
 
         for (int offset = warpSize / 2; offset > 0; offset /= 2) {

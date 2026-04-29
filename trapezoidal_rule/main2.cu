@@ -19,8 +19,8 @@ __device__ float Shared_mem_sum(float* shared_vals, int my_lane) {
 }
 
 __global__ void trapezoidal_kernel(float a, float b, int n, float h, float* block_sums) {
-    __shared__ float thread_calcs[MAX_BLKSZ]; 
-    __shared__ float warp_sum_arr[WARPSZ];    
+    __shared__ float thread_calcs[MAX_BLKSZ];
+    __shared__ float warp_sum_arr[WARPSZ];
 
     int tid     = threadIdx.x + blockIdx.x * blockDim.x;
     int w       = threadIdx.x / WARPSZ;
@@ -33,7 +33,7 @@ __global__ void trapezoidal_kernel(float a, float b, int n, float h, float* bloc
     if (tid < n) {
         my_contrib = f(my_x);
 
-        // Applica i pesi della regola del trapezio (metÃ  per gli estremi)
+        // Applica i pesi della regola del trapezio (half per gli estremi)
         if (tid == 0 || tid == n - 1) {
             my_contrib /= 2.0f;
         }
@@ -41,8 +41,8 @@ __global__ void trapezoidal_kernel(float a, float b, int n, float h, float* bloc
     }
 
     // I thread del warp salvano i calcoli in un sotto-array dedicato
-    float* shared_vals = thread_calcs + w * WARPSZ; 
-    shared_vals[my_lane] = my_contrib; 
+    float* shared_vals   = thread_calcs + w * WARPSZ;
+    shared_vals[my_lane] = my_contrib;
 
     __syncwarp();
 
@@ -89,7 +89,9 @@ float trapezoidal_cpu(float a, float b, int n, float h) {
 int main() {
     float a = 0.0f;
     float b = 10.0f;
-    int n   = 1024 * 1024; // 1 mln intervals
+
+    int n   = 1024 * 1024;
+
     float h = (b - a) / (float)n;
 
     // Impostazione di k > 1 (es. k = 8 implica blocchi da 256 threads)

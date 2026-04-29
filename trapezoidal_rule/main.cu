@@ -46,8 +46,8 @@ int main() {
     float a = 0.0f;
     float b = 10.0f;
 
-    int n          = 10000000; 
-    int block_size = 256; 
+    int n          = 10000000;
+    int block_size = 256;
 
     printf("Integrazione di f(x)=x^2 da %f a %f con %d trapezi.\n", a, b, n);
     printf("Block size: %d threads\n\n", block_size);
